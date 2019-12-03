@@ -1,0 +1,22 @@
+{
+	"name": "SynapseDataLake_NYCTaxiData_CSV",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "synapsedatalake",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "DelimitedText",
+		"typeProperties": {
+			"location": {
+				"type": "AzureBlobStorageLocation",
+				"container": "nyctaxidata-raw"
+			},
+			"columnDelimiter": ",",
+			"escapeChar": "\\",
+			"firstRowAsHeader": true,
+			"quoteChar": "\""
+		},
+		"schema": []
+	}
+}
