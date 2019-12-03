@@ -498,7 +498,7 @@
 				"typeProperties": {
 					"location": {
 						"type": "AzureBlobStorageLocation",
-						"container": "nyctaxidata"
+						"container": "nyctaxidata-raw"
 					}
 				}
 			},
