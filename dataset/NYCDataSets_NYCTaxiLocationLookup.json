@@ -1,0 +1,16 @@
+{
+	"name": "NYCDataSets_NYCTaxiLocationLookup",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "OperationalSQL_NYCDataSets",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "AzureSqlTable",
+		"schema": [],
+		"typeProperties": {
+			"schema": "NYC",
+			"table": "TaxiLocationLookup"
+		}
+	}
+}
