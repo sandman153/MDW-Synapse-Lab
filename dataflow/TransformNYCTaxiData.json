@@ -1,0 +1,31 @@
+{
+	"name": "TransformNYCTaxiData",
+	"properties": {
+		"type": "MappingDataFlow",
+		"typeProperties": {
+			"sources": [
+				{
+					"dataset": {
+						"referenceName": "SynapseDataLake_NYCTaxiData_CSV",
+						"type": "DatasetReference"
+					},
+					"name": "TaxiDataFiles"
+				},
+				{
+					"dataset": {
+						"referenceName": "SynapseDW_NYCTaxiLocationLookup",
+						"type": "DatasetReference"
+					},
+					"name": "TaxiLocationLookup"
+				}
+			],
+			"sinks": [],
+			"transformations": [
+				{
+					"name": "TransformColumns"
+				}
+			],
+			"script": "\n\nsource(output(\n\t\tVendorID as string,\n\t\ttpep_pickup_datetime as string,\n\t\ttpep_dropoff_datetime as string,\n\t\tpassenger_count as string,\n\t\ttrip_distance as string,\n\t\tRatecodeID as string,\n\t\tstore_and_fwd_flag as string,\n\t\tPULocationID as string,\n\t\tDOLocationID as string,\n\t\tpayment_type as string,\n\t\tfare_amount as string,\n\t\textra as string,\n\t\tmta_tax as string,\n\t\ttip_amount as string,\n\t\ttolls_amount as string,\n\t\timprovement_surcharge as string,\n\t\ttotal_amount as string,\n\t\tcongestion_surcharge as string\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false) ~> TaxiDataFiles\nsource(output(\n\t\tLocationID as integer,\n\t\tBorough as string,\n\t\tZone as string,\n\t\tServiceZone as string\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tisolationLevel: 'READ_UNCOMMITTED',\n\tformat: 'table',\n\tstaged: false) ~> TaxiLocationLookup\nTaxiDataFiles derive(payment_type = case (payment_type == '1', 'Credit card'\r\n    , payment_type == '2', 'Cash'\r\n    , payment_type == '3', 'No charge'\r\n    , payment_type == '4', 'Dispute'\r\n    , payment_type == '5', 'Unknown'\r\n    , payment_type == '6', 'Voided trip'),\n\t\tPickUpDate = toDate(tpep_pickup_datetime,'yyyy-MM-dd'),\n\t\tPickUpLocationID = toInteger(PULocationID),\n\t\tPassengerCount = toInteger(passenger_count),\n\t\tDistanceTravelled = toDecimal(trip_distance)) ~> TransformColumns"
+		}
+	}
+}
