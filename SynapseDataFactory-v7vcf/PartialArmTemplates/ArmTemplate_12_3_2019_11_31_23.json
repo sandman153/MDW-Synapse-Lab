@@ -6,484 +6,12 @@
 			"type": "string",
 			"metadata": "Data Factory name",
 			"defaultValue": "SynapseDataFactory-v7vcf"
-		},
-		"OperationalSQL_NYCDataSets_connectionString": {
-			"type": "secureString",
-			"metadata": "Secure string for 'connectionString' of 'OperationalSQL_NYCDataSets'"
-		},
-		"SynapseSQL_SynapseDW_connectionString": {
-			"type": "secureString",
-			"metadata": "Secure string for 'connectionString' of 'SynapseSQL_SynapseDW'"
-		},
-		"synapsedatalake_connectionString": {
-			"type": "secureString",
-			"metadata": "Secure string for 'connectionString' of 'synapsedatalake'"
-		},
-		"MDWResources_sasUri": {
-			"type": "secureString",
-			"metadata": "Secure string for 'sasUri' of 'MDWResources'"
 		}
 	},
 	"variables": {
 		"factoryId": "[concat('Microsoft.DataFactory/factories/', parameters('factoryName'))]"
 	},
 	"resources": [
-		{
-			"name": "[concat(parameters('factoryName'), '/Copy Data')]",
-			"type": "Microsoft.DataFactory/factories/pipelines",
-			"apiVersion": "2018-06-01",
-			"properties": {
-				"activities": [
-					{
-						"name": "CopyMotorVehicleCollisions",
-						"type": "Copy",
-						"dependsOn": [],
-						"policy": {
-							"timeout": "7.00:00:00",
-							"retry": 0,
-							"retryIntervalInSeconds": 30,
-							"secureOutput": false,
-							"secureInput": false
-						},
-						"userProperties": [],
-						"typeProperties": {
-							"source": {
-								"type": "AzureSqlSource"
-							},
-							"sink": {
-								"type": "SqlDWSink",
-								"allowPolyBase": true,
-								"polyBaseSettings": {
-									"rejectValue": 0,
-									"rejectType": "value",
-									"useTypeDefault": true
-								}
-							},
-							"enableStaging": true,
-							"stagingSettings": {
-								"linkedServiceName": {
-									"referenceName": "synapsedatalake",
-									"type": "LinkedServiceReference"
-								},
-								"path": "polybase"
-							}
-						},
-						"inputs": [
-							{
-								"referenceName": "NYCDataSets_MotorVehicleCollisions",
-								"type": "DatasetReference",
-								"parameters": {}
-							}
-						],
-						"outputs": [
-							{
-								"referenceName": "SynapseDW_MotorVehicleCollisions",
-								"type": "DatasetReference",
-								"parameters": {}
-							}
-						]
-					}
-				],
-				"annotations": []
-			},
-			"dependsOn": [
-				"[concat(variables('factoryId'), '/datasets/NYCDataSets_MotorVehicleCollisions')]",
-				"[concat(variables('factoryId'), '/datasets/SynapseDW_MotorVehicleCollisions')]",
-				"[concat(variables('factoryId'), '/linkedServices/synapsedatalake')]"
-			]
-		},
-		{
-			"name": "[concat(parameters('factoryName'), '/NYCDataSets_MotorVehicleCollisions')]",
-			"type": "Microsoft.DataFactory/factories/datasets",
-			"apiVersion": "2018-06-01",
-			"properties": {
-				"linkedServiceName": {
-					"referenceName": "OperationalSQL_NYCDataSets",
-					"type": "LinkedServiceReference"
-				},
-				"folder": {
-					"name": "Lab1"
-				},
-				"annotations": [],
-				"type": "AzureSqlTable",
-				"schema": [
-					{
-						"name": "UniqueKey",
-						"type": "int",
-						"precision": 10
-					},
-					{
-						"name": "CollisionDate",
-						"type": "date"
-					},
-					{
-						"name": "CollisionDayOfWeek",
-						"type": "varchar"
-					},
-					{
-						"name": "CollisionTime",
-						"type": "time",
-						"scale": 7
-					},
-					{
-						"name": "CollisionTimeAMPM",
-						"type": "varchar"
-					},
-					{
-						"name": "CollisionTimeBin",
-						"type": "varchar"
-					},
-					{
-						"name": "Borough",
-						"type": "varchar"
-					},
-					{
-						"name": "ZipCode",
-						"type": "varchar"
-					},
-					{
-						"name": "Latitude",
-						"type": "float",
-						"precision": 15
-					},
-					{
-						"name": "Longitude",
-						"type": "float",
-						"precision": 15
-					},
-					{
-						"name": "Location",
-						"type": "varchar"
-					},
-					{
-						"name": "OnStreetName",
-						"type": "varchar"
-					},
-					{
-						"name": "CrossStreetName",
-						"type": "varchar"
-					},
-					{
-						"name": "OffStreetName",
-						"type": "varchar"
-					},
-					{
-						"name": "NumberPersonsInjured",
-						"type": "int",
-						"precision": 10
-					},
-					{
-						"name": "NumberPersonsKilled",
-						"type": "int",
-						"precision": 10
-					},
-					{
-						"name": "IsFatalCollision",
-						"type": "int",
-						"precision": 10
-					},
-					{
-						"name": "NumberPedestriansInjured",
-						"type": "int",
-						"precision": 10
-					},
-					{
-						"name": "NumberPedestriansKilled",
-						"type": "int",
-						"precision": 10
-					},
-					{
-						"name": "NumberCyclistInjured",
-						"type": "int",
-						"precision": 10
-					},
-					{
-						"name": "NumberCyclistKilled",
-						"type": "int",
-						"precision": 10
-					},
-					{
-						"name": "NumberMotoristInjured",
-						"type": "int",
-						"precision": 10
-					},
-					{
-						"name": "NumberMotoristKilled",
-						"type": "int",
-						"precision": 10
-					},
-					{
-						"name": "ContributingFactorVehicle1",
-						"type": "varchar"
-					},
-					{
-						"name": "ContributingFactorVehicle2",
-						"type": "varchar"
-					},
-					{
-						"name": "ContributingFactorVehicle3",
-						"type": "varchar"
-					},
-					{
-						"name": "ContributingFactorVehicle4",
-						"type": "varchar"
-					},
-					{
-						"name": "ContributingFactorVehicle5",
-						"type": "varchar"
-					},
-					{
-						"name": "VehicleTypeCode1",
-						"type": "varchar"
-					},
-					{
-						"name": "VehicleTypeCode2",
-						"type": "varchar"
-					},
-					{
-						"name": "VehicleTypeCode3",
-						"type": "varchar"
-					},
-					{
-						"name": "VehicleTypeCode4",
-						"type": "varchar"
-					},
-					{
-						"name": "VehicleTypeCode5",
-						"type": "varchar"
-					}
-				],
-				"typeProperties": {
-					"schema": "NYC",
-					"table": "NYPD_MotorVehicleCollisions"
-				}
-			},
-			"dependsOn": [
-				"[concat(variables('factoryId'), '/linkedServices/OperationalSQL_NYCDataSets')]"
-			]
-		},
-		{
-			"name": "[concat(parameters('factoryName'), '/SynapseDW_MotorVehicleCollisions')]",
-			"type": "Microsoft.DataFactory/factories/datasets",
-			"apiVersion": "2018-06-01",
-			"properties": {
-				"linkedServiceName": {
-					"referenceName": "SynapseSQL_SynapseDW",
-					"type": "LinkedServiceReference"
-				},
-				"folder": {
-					"name": "Lab1"
-				},
-				"annotations": [],
-				"type": "AzureSqlDWTable",
-				"schema": [
-					{
-						"name": "UniqueKey",
-						"type": "int",
-						"precision": 10
-					},
-					{
-						"name": "CollisionDate",
-						"type": "date"
-					},
-					{
-						"name": "CollisionDayOfWeek",
-						"type": "varchar"
-					},
-					{
-						"name": "CollisionTime",
-						"type": "time",
-						"scale": 7
-					},
-					{
-						"name": "CollisionTimeAMPM",
-						"type": "varchar"
-					},
-					{
-						"name": "CollisionTimeBin",
-						"type": "varchar"
-					},
-					{
-						"name": "Borough",
-						"type": "varchar"
-					},
-					{
-						"name": "ZipCode",
-						"type": "varchar"
-					},
-					{
-						"name": "Latitude",
-						"type": "float",
-						"precision": 15
-					},
-					{
-						"name": "Longitude",
-						"type": "float",
-						"precision": 15
-					},
-					{
-						"name": "Location",
-						"type": "varchar"
-					},
-					{
-						"name": "OnStreetName",
-						"type": "varchar"
-					},
-					{
-						"name": "CrossStreetName",
-						"type": "varchar"
-					},
-					{
-						"name": "OffStreetName",
-						"type": "varchar"
-					},
-					{
-						"name": "NumberPersonsInjured",
-						"type": "int",
-						"precision": 10
-					},
-					{
-						"name": "NumberPersonsKilled",
-						"type": "int",
-						"precision": 10
-					},
-					{
-						"name": "IsFatalCollision",
-						"type": "int",
-						"precision": 10
-					},
-					{
-						"name": "NumberPedestriansInjured",
-						"type": "int",
-						"precision": 10
-					},
-					{
-						"name": "NumberPedestriansKilled",
-						"type": "int",
-						"precision": 10
-					},
-					{
-						"name": "NumberCyclistInjured",
-						"type": "int",
-						"precision": 10
-					},
-					{
-						"name": "NumberCyclistKilled",
-						"type": "int",
-						"precision": 10
-					},
-					{
-						"name": "NumberMotoristInjured",
-						"type": "int",
-						"precision": 10
-					},
-					{
-						"name": "NumberMotoristKilled",
-						"type": "int",
-						"precision": 10
-					},
-					{
-						"name": "ContributingFactorVehicle1",
-						"type": "varchar"
-					},
-					{
-						"name": "ContributingFactorVehicle2",
-						"type": "varchar"
-					},
-					{
-						"name": "ContributingFactorVehicle3",
-						"type": "varchar"
-					},
-					{
-						"name": "ContributingFactorVehicle4",
-						"type": "varchar"
-					},
-					{
-						"name": "ContributingFactorVehicle5",
-						"type": "varchar"
-					},
-					{
-						"name": "VehicleTypeCode1",
-						"type": "varchar"
-					},
-					{
-						"name": "VehicleTypeCode2",
-						"type": "varchar"
-					},
-					{
-						"name": "VehicleTypeCode3",
-						"type": "varchar"
-					},
-					{
-						"name": "VehicleTypeCode4",
-						"type": "varchar"
-					},
-					{
-						"name": "VehicleTypeCode5",
-						"type": "varchar"
-					}
-				],
-				"typeProperties": {
-					"schema": "NYC",
-					"table": "NYPD_MotorVehicleCollisions"
-				}
-			},
-			"dependsOn": [
-				"[concat(variables('factoryId'), '/linkedServices/SynapseSQL_SynapseDW')]"
-			]
-		},
-		{
-			"name": "[concat(parameters('factoryName'), '/MDWResources')]",
-			"type": "Microsoft.DataFactory/factories/linkedServices",
-			"apiVersion": "2018-06-01",
-			"properties": {
-				"annotations": [],
-				"type": "AzureBlobStorage",
-				"typeProperties": {
-					"sasUri": "[parameters('MDWResources_sasUri')]"
-				}
-			},
-			"dependsOn": []
-		},
-		{
-			"name": "[concat(parameters('factoryName'), '/OperationalSQL_NYCDataSets')]",
-			"type": "Microsoft.DataFactory/factories/linkedServices",
-			"apiVersion": "2018-06-01",
-			"properties": {
-				"annotations": [],
-				"type": "AzureSqlDatabase",
-				"typeProperties": {
-					"connectionString": "[parameters('OperationalSQL_NYCDataSets_connectionString')]"
-				}
-			},
-			"dependsOn": []
-		},
-		{
-			"name": "[concat(parameters('factoryName'), '/SynapseSQL_SynapseDW')]",
-			"type": "Microsoft.DataFactory/factories/linkedServices",
-			"apiVersion": "2018-06-01",
-			"properties": {
-				"annotations": [],
-				"type": "AzureSqlDW",
-				"typeProperties": {
-					"connectionString": "[parameters('SynapseSQL_SynapseDW_connectionString')]"
-				}
-			},
-			"dependsOn": []
-		},
-		{
-			"name": "[concat(parameters('factoryName'), '/synapsedatalake')]",
-			"type": "Microsoft.DataFactory/factories/linkedServices",
-			"apiVersion": "2018-06-01",
-			"properties": {
-				"annotations": [],
-				"type": "AzureBlobStorage",
-				"typeProperties": {
-					"connectionString": "[parameters('synapsedatalake_connectionString')]"
-				}
-			},
-			"dependsOn": []
-		},
 		{
 			"name": "[concat(parameters('factoryName'), '/MDWResources_NYCTaxiData_Binary')]",
 			"type": "Microsoft.DataFactory/factories/datasets",
@@ -502,9 +30,7 @@
 					}
 				}
 			},
-			"dependsOn": [
-				"[concat(variables('factoryId'), '/linkedServices/MDWResources')]"
-			]
+			"dependsOn": []
 		},
 		{
 			"name": "[concat(parameters('factoryName'), '/SynapseDataLake_NYCTaxiData_Binary')]",
@@ -524,9 +50,7 @@
 					}
 				}
 			},
-			"dependsOn": [
-				"[concat(variables('factoryId'), '/linkedServices/synapsedatalake')]"
-			]
+			"dependsOn": []
 		},
 		{
 			"name": "[concat(parameters('factoryName'), '/SynapseDataLake_NYCTaxiData_CSV')]",
@@ -624,9 +148,7 @@
 					}
 				]
 			},
-			"dependsOn": [
-				"[concat(variables('factoryId'), '/linkedServices/synapsedatalake')]"
-			]
+			"dependsOn": []
 		},
 		{
 			"name": "[concat(parameters('factoryName'), '/NYCDataSets_NYCTaxiLocationLookup')]",
@@ -645,9 +167,7 @@
 					"table": "TaxiLocationLookup"
 				}
 			},
-			"dependsOn": [
-				"[concat(variables('factoryId'), '/linkedServices/OperationalSQL_NYCDataSets')]"
-			]
+			"dependsOn": []
 		},
 		{
 			"name": "[concat(parameters('factoryName'), '/SynapseDW_NYCTaxiDataSummary')]",
@@ -717,9 +237,7 @@
 					"table": "TaxiDataSummary"
 				}
 			},
-			"dependsOn": [
-				"[concat(variables('factoryId'), '/linkedServices/SynapseSQL_SynapseDW')]"
-			]
+			"dependsOn": []
 		},
 		{
 			"name": "[concat(parameters('factoryName'), '/SynapseDW_NYCTaxiLocationLookup')]",
@@ -756,27 +274,6 @@
 					"table": "TaxiLocationLookup"
 				}
 			},
-			"dependsOn": [
-				"[concat(variables('factoryId'), '/linkedServices/SynapseSQL_SynapseDW')]"
-			]
-		},
-		{
-			"name": "[concat(parameters('factoryName'), '/MappingDataFlowsIR')]",
-			"type": "Microsoft.DataFactory/factories/integrationRuntimes",
-			"apiVersion": "2018-06-01",
-			"properties": {
-				"type": "Managed",
-				"typeProperties": {
-					"computeProperties": {
-						"location": "AutoResolve",
-						"dataFlowProperties": {
-							"computeType": "General",
-							"coreCount": 16,
-							"timeToLive": 10
-						}
-					}
-				}
-			},
 			"dependsOn": []
 		},
 		{
@@ -792,16 +289,14 @@
 								"referenceName": "SynapseDataLake_NYCTaxiData_CSV",
 								"type": "DatasetReference"
 							},
-							"name": "TaxiDataFiles",
-							"typeProperties": {}
+							"name": "TaxiDataFiles"
 						},
 						{
 							"dataset": {
 								"referenceName": "SynapseDW_NYCTaxiLocationLookup",
 								"type": "DatasetReference"
 							},
-							"name": "TaxiLocationLookup",
-							"typeProperties": {}
+							"name": "TaxiLocationLookup"
 						}
 					],
 					"sinks": [
@@ -874,15 +369,13 @@
 						"inputs": [
 							{
 								"referenceName": "MDWResources_NYCTaxiData_Binary",
-								"type": "DatasetReference",
-								"parameters": {}
+								"type": "DatasetReference"
 							}
 						],
 						"outputs": [
 							{
 								"referenceName": "SynapseDataLake_NYCTaxiData_Binary",
-								"type": "DatasetReference",
-								"parameters": {}
+								"type": "DatasetReference"
 							}
 						]
 					},
@@ -925,15 +418,13 @@
 						"inputs": [
 							{
 								"referenceName": "NYCDataSets_NYCTaxiLocationLookup",
-								"type": "DatasetReference",
-								"parameters": {}
+								"type": "DatasetReference"
 							}
 						],
 						"outputs": [
 							{
 								"referenceName": "SynapseDW_NYCTaxiLocationLookup",
-								"type": "DatasetReference",
-								"parameters": {}
+								"type": "DatasetReference"
 							}
 						]
 					},
@@ -965,13 +456,7 @@
 						"typeProperties": {
 							"dataflow": {
 								"referenceName": "TransformNYCTaxiData",
-								"type": "DataFlowReference",
-								"parameters": {},
-								"datasetParameters": {
-									"TaxiDataFiles": {},
-									"TaxiLocationLookup": {},
-									"TaxiDataSummary": {}
-								}
+								"type": "DataFlowReference"
 							},
 							"staging": {
 								"linkedService": {
@@ -994,9 +479,7 @@
 				"[concat(variables('factoryId'), '/datasets/SynapseDataLake_NYCTaxiData_Binary')]",
 				"[concat(variables('factoryId'), '/datasets/NYCDataSets_NYCTaxiLocationLookup')]",
 				"[concat(variables('factoryId'), '/datasets/SynapseDW_NYCTaxiLocationLookup')]",
-				"[concat(variables('factoryId'), '/dataflows/TransformNYCTaxiData')]",
-				"[concat(variables('factoryId'), '/integrationRuntimes/MappingDataFlowsIR')]",
-				"[concat(variables('factoryId'), '/linkedServices/synapsedatalake')]"
+				"[concat(variables('factoryId'), '/dataflows/TransformNYCTaxiData')]"
 			]
 		}
 	]

@@ -14,6 +14,9 @@
 		"synapsedatalake_connectionString": {
 			"value": ""
 		},
+		"MDWResources_sasUri": {
+			"value": ""
+		},
 		"containerUri": {
 			"value": ""
 		},
