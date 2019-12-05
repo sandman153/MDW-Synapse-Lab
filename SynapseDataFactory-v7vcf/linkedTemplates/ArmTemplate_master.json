@@ -19,6 +19,14 @@
 			"type": "secureString",
 			"metadata": "Secure string for 'connectionString' of 'synapsedatalake'"
 		},
+		"ADPDatabricks_accessToken": {
+			"type": "secureString",
+			"metadata": "Secure string for 'accessToken' of 'ADPDatabricks'"
+		},
+		"ADPCosmosDB_connectionString": {
+			"type": "secureString",
+			"metadata": "Secure string for 'connectionString' of 'ADPCosmosDB'"
+		},
 		"MDWResources_sasUri": {
 			"type": "secureString",
 			"metadata": "Secure string for 'sasUri' of 'MDWResources'"
@@ -59,12 +67,38 @@
 					"synapsedatalake_connectionString": {
 						"value": "[parameters('synapsedatalake_connectionString')]"
 					},
+					"ADPDatabricks_accessToken": {
+						"value": "[parameters('ADPDatabricks_accessToken')]"
+					},
+					"ADPCosmosDB_connectionString": {
+						"value": "[parameters('ADPCosmosDB_connectionString')]"
+					},
 					"MDWResources_sasUri": {
 						"value": "[parameters('MDWResources_sasUri')]"
 					}
 				}
 			},
 			"dependsOn": []
+		},
+		{
+			"name": "ArmTemplate_1",
+			"type": "Microsoft.Resources/deployments",
+			"apiVersion": "2018-02-01",
+			"properties": {
+				"mode": "incremental",
+				"templateLink": {
+					"uri": "[concat(parameters('containerUri'), '/ArmTemplate_1.json', parameters('containerSasToken'))]",
+					"contentVersion": "1.0.0.0"
+				},
+				"parameters": {
+					"factoryName": {
+						"value": "[parameters('factoryName')]"
+					}
+				}
+			},
+			"dependsOn": [
+				"[resourceId('Microsoft.Resources/deployments', 'ArmTemplate_0')]"
+			]
 		}
 	]
 }
