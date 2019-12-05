@@ -1,0 +1,14 @@
+{
+	"name": "ADPCosmosDB_NYCImageMetadata",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "ADPCosmosDB",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "CosmosDbSqlApiCollection",
+		"typeProperties": {
+			"collectionName": "ImageMetadata"
+		}
+	}
+}

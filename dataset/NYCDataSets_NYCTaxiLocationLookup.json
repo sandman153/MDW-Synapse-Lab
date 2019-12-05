@@ -5,6 +5,9 @@
 			"referenceName": "OperationalSQL_NYCDataSets",
 			"type": "LinkedServiceReference"
 		},
+		"folder": {
+			"name": "Lab2"
+		},
 		"annotations": [],
 		"type": "AzureSqlTable",
 		"schema": [],
