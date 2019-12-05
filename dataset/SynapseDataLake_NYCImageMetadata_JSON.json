@@ -5,6 +5,9 @@
 			"referenceName": "synapsedatalake",
 			"type": "LinkedServiceReference"
 		},
+		"folder": {
+			"name": "Lab4"
+		},
 		"annotations": [],
 		"type": "Json",
 		"typeProperties": {

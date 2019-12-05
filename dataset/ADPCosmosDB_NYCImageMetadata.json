@@ -5,6 +5,9 @@
 			"referenceName": "ADPCosmosDB",
 			"type": "LinkedServiceReference"
 		},
+		"folder": {
+			"name": "Lab4"
+		},
 		"annotations": [],
 		"type": "CosmosDbSqlApiCollection",
 		"typeProperties": {
