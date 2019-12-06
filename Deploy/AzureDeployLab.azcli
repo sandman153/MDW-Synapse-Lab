@@ -12,7 +12,7 @@ az group deployment create --subscription  "AzureTraining" --resource-group "MDW
 
 az group delete --name adflab --yes
 
-az group delete --name MDW-Lab2 --yes
+az group delete --name MDW-Synapse --yes
 
 
 az account list-locations
