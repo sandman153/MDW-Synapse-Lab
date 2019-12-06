@@ -1,0 +1,183 @@
+{
+	"name": "Lab4 - Generate NYC Image Metadata",
+	"properties": {
+		"activities": [
+			{
+				"name": "CopyImageFiles",
+				"type": "Copy",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "BinarySource",
+						"storeSettings": {
+							"type": "AzureBlobStorageReadSettings",
+							"recursive": true
+						}
+					},
+					"sink": {
+						"type": "BinarySink",
+						"storeSettings": {
+							"type": "AzureBlobStorageWriteSettings",
+							"copyBehavior": "PreserveHierarchy"
+						}
+					},
+					"enableStaging": false
+				},
+				"inputs": [
+					{
+						"referenceName": "MDWResources_NYCImages_Binary",
+						"type": "DatasetReference"
+					}
+				],
+				"outputs": [
+					{
+						"referenceName": "SynapseDataLake_NYCImages_Binary",
+						"type": "DatasetReference"
+					}
+				]
+			},
+			{
+				"name": "GetImageFileList",
+				"type": "GetMetadata",
+				"dependsOn": [
+					{
+						"activity": "CopyImageFiles",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"dataset": {
+						"referenceName": "SynapseDataLake_NYCImages_Binary",
+						"type": "DatasetReference"
+					},
+					"fieldList": [
+						"childItems"
+					],
+					"storeSettings": {
+						"type": "AzureBlobStorageReadSettings",
+						"recursive": true
+					}
+				}
+			},
+			{
+				"name": "ForEachImage",
+				"type": "ForEach",
+				"dependsOn": [
+					{
+						"activity": "GetImageFileList",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@activity('GetImageFileList').output.childItems",
+						"type": "Expression"
+					},
+					"activities": [
+						{
+							"name": "GetImageMetadata",
+							"type": "DatabricksNotebook",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "7.00:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"notebookPath": "/Users/boppudsara@gmail.com/NYCImageMetadata-Lab",
+								"baseParameters": {
+									"nycImageUrl": {
+										"value": "@concat(variables('ImageMetadataContainerUrl'), item().name)",
+										"type": "Expression"
+									}
+								}
+							},
+							"linkedServiceName": {
+								"referenceName": "ADPDatabricks",
+								"type": "LinkedServiceReference"
+							}
+						}
+					]
+				}
+			},
+			{
+				"name": "ServeImageMetadata",
+				"type": "Copy",
+				"dependsOn": [
+					{
+						"activity": "ForEachImage",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "JsonSource",
+						"storeSettings": {
+							"type": "AzureBlobStorageReadSettings",
+							"recursive": true,
+							"wildcardFileName": "*.json"
+						}
+					},
+					"sink": {
+						"type": "CosmosDbSqlApiSink",
+						"writeBehavior": "insert"
+					},
+					"enableStaging": false
+				},
+				"inputs": [
+					{
+						"referenceName": "SynapseDataLake_NYCImageMetadata_JSON",
+						"type": "DatasetReference"
+					}
+				],
+				"outputs": [
+					{
+						"referenceName": "ADPCosmosDB_NYCImageMetadata",
+						"type": "DatasetReference"
+					}
+				]
+			}
+		],
+		"variables": {
+			"ImageMetadataContainerUrl": {
+				"type": "String",
+				"defaultValue": "https://synapsedatalakev7vcf.blob.core.windows.net/nycimages/"
+			}
+		},
+		"annotations": []
+	}
+}

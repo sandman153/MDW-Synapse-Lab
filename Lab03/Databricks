@@ -1,0 +1,195 @@
+# Databricks notebook source
+#Setup connection to SynapseDataLake storage account
+
+def MountDataLakeContainer(datalakeAccountName, datalakeAccountKey, containerName, mountPointName):
+    dataLakeAccountDNS = datalakeAccountName + ".blob.core.windows.net"
+    
+    dataLakeAuthTypeConfig = "fs.azure.account.auth.type." + dataLakeAccountDNS
+    dataLakeKeyConfig = "fs.azure.account.key." + dataLakeAccountDNS
+    
+    dataLakeExtraConfig = {dataLakeAuthTypeConfig:"SharedKey"
+                           , dataLakeKeyConfig:datalakeAccountKey}
+    
+    containerUri = "wasbs://" + containerName + "@" + dataLakeAccountDNS
+    mountPointFolder = "/mnt/" + mountPointName
+
+    try:
+        dbutils.fs.mount(source = containerUri, mount_point = mountPointFolder, extra_configs = dataLakeExtraConfig)
+    except Exception as e:
+        if "Directory already mounted" in str(e):
+            pass # Ignore error if already mounted.
+        else:
+            raise e
+    return containerUri
+
+#Set Account Name and Key Variable Values
+dataLakeAccountName = 'synapsedatalakev7vcf' #<-- Your synapsedatalake account name goes here. Remember to replace <suffix> with your own suffix.
+dataLakeAccountKey = 'rYoCMEoiRtLHWG4nF4ihieHcWsJ6Kb4Z3pt07MsNsH1rf9S8gtxwNUeAqdP8hNjoOPzgerdB+IPlkBAJtjOV1Q==' #<-- Your synapsedatalake account key goes here.
+
+#Mount NYCTaxiData-Raw and NYCTaxiData-Curated Containers
+MountDataLakeContainer(dataLakeAccountName, dataLakeAccountKey, 'nyctaxidata-raw', 'raw')
+MountDataLakeContainer(dataLakeAccountName, dataLakeAccountKey, 'nyctaxidata-curated', 'curated')
+
+# COMMAND ----------
+
+#Define NYCTaxiData schema and load data into a Data Frame
+
+from pyspark.sql.types import *
+
+nycTaxiDataSchema = StructType([
+  StructField("VendorID",IntegerType(),True)
+  , StructField("tpep_pickup_datetime",DateType(),True)
+  , StructField("tpep_dropoff_datetime",DateType(),True)
+  , StructField("passenger_count",IntegerType(),True)
+  , StructField("trip_distance",DoubleType(),True)
+  , StructField("RatecodeID",IntegerType(),True)
+  , StructField("store_and_fwd_flag",StringType(),True)
+  , StructField("PULocationID",IntegerType(),True)
+  , StructField("DOLocationID",IntegerType(),True)
+  , StructField("payment_type",IntegerType(),True)
+  , StructField("fare_amount",DoubleType(),True)
+  , StructField("extra",DoubleType(),True)
+  , StructField("mta_tax",DoubleType(),True)
+  , StructField("tip_amount",DoubleType(),True)
+  , StructField("tolls_amount",DoubleType(),True)
+  , StructField("improvement_surcharge",DoubleType(),True)
+  , StructField("total_amount",DoubleType(),True)])
+  
+dfNYCTaxiData = spark.read.format('csv').options(header='true').schema(nycTaxiDataSchema).load('/mnt/raw/*.csv')
+dfNYCTaxiData.cache()
+
+# COMMAND ----------
+
+#Display Data Frame Content
+
+display(dfNYCTaxiData)
+
+# COMMAND ----------
+
+# Use Data Frame API Operations to Filter Data
+
+display(dfNYCTaxiData.select("tpep_pickup_datetime", "passenger_count", "total_amount").filter("passenger_count > 6 and total_amount > 50.0"))
+
+# COMMAND ----------
+
+# Create Local Temp View
+
+dfNYCTaxiData.createOrReplaceTempView('NYCTaxiDataTable')
+
+# COMMAND ----------
+
+# MAGIC %sql
+# MAGIC --Use SQL to count NYC Taxi Data records
+# MAGIC 
+# MAGIC select count(*) from NYCTaxiDataTable
+
+# COMMAND ----------
+
+# MAGIC %sql
+# MAGIC -- Use SQL to filter NYC Taxi Data records
+# MAGIC 
+# MAGIC select cast(tpep_pickup_datetime as date) as pickup_date
+# MAGIC   , tpep_dropoff_datetime
+# MAGIC   , passenger_count
+# MAGIC   , total_amount
+# MAGIC from NYCTaxiDataTable
+# MAGIC where cast(tpep_pickup_datetime as date) = '2019-04-07'
+# MAGIC   and passenger_count > 5
+
+# COMMAND ----------
+
+# MAGIC %sql
+# MAGIC -- Use SQL to aggregate NYC Taxi Data records and visualize data
+# MAGIC select case payment_type
+# MAGIC             when 1 then 'Credit card'
+# MAGIC             when 2 then 'Cash'
+# MAGIC             when 3 then 'No charge'
+# MAGIC             when 4 then 'Dispute'
+# MAGIC             when 5 then 'Unknown'
+# MAGIC             when 6 then 'Voided trip'
+# MAGIC         end as PaymentType
+# MAGIC   , count(*) as TotalRideCount
+# MAGIC from NYCTaxiDataTable
+# MAGIC group by payment_type
+# MAGIC order by TotalRideCount desc
+
+# COMMAND ----------
+
+# Load Taxi Location Data from Azure Synapse Analytics
+
+jdbcUrl = "jdbc:sqlserver://synapsesql-v7vcf.database.windows.net:1433;database=SynapseDW" #Replace "suffix" with your own  
+connectionProperties = {
+  "user" : "adpadmin",
+  "password" : "P@ssw0rd123!",
+  "driver" : "com.microsoft.sqlserver.jdbc.SQLServerDriver"
+}
+
+pushdown_query = '(select * from NYC.TaxiLocationLookup) as t'
+dfLookupLocation = spark.read.jdbc(url=jdbcUrl, table=pushdown_query, properties=connectionProperties)
+
+dfLookupLocation.createOrReplaceTempView('NYCTaxiLocation')
+
+display(dfLookupLocation) 
+
+# COMMAND ----------
+
+# MAGIC %sql
+# MAGIC --Create Spark table with cleansed, validated dataset combining raw CSV files and reference data from you Synapse data warehouse
+# MAGIC --Data will be saved into the NYCTaxiData-Curated container in your SynapseDataLake account
+# MAGIC 
+# MAGIC create table if not exists NYCTaxiData_Curated
+# MAGIC using parquet partitioned by (PickUpYearMonth) --Use Parquet format partitioned by YYYY-MM
+# MAGIC options ('compression'='snappy') --Parquet compression options
+# MAGIC location '/mnt/curated/' --Data to be saved in the NYCTaxiData-Curated container in your SynapseDataLake storage account.
+# MAGIC as
+# MAGIC select 
+# MAGIC     VendorID
+# MAGIC     , cast(tpep_pickup_datetime as date) as PickUpDate
+# MAGIC     , concat(year(tpep_pickup_datetime), '-', format_string('%02d',month(tpep_pickup_datetime),'##')) as PickUpYearMonth --Partition Key
+# MAGIC     , cast(tpep_pickup_datetime as timestamp) as PickUpDateTime
+# MAGIC     , cast(tpep_dropoff_datetime as date) as DropOffDate
+# MAGIC     , cast(tpep_dropoff_datetime as timestamp) as DropOffDateTime
+# MAGIC     , passenger_count as PassengerCount
+# MAGIC     , trip_distance as TripDistance
+# MAGIC     , cast(PULocationID as int) as PickUpLocationID
+# MAGIC     , pu.Zone as PickUpLocationZone
+# MAGIC     , pu.Borough as PickUpLocationBorough
+# MAGIC     , cast(DOLocationID as int) as DropOffLocationID
+# MAGIC     , do.Zone as DropOffLocationZone
+# MAGIC     , do.Borough as DropOffLocationBorough
+# MAGIC     , cast(payment_type as int) as PaymentTypeID
+# MAGIC     , case payment_type
+# MAGIC             when 1 then 'Credit card'
+# MAGIC             when 2 then 'Cash'
+# MAGIC             when 3 then 'No charge'
+# MAGIC             when 4 then 'Dispute'
+# MAGIC             when 5 then 'Unknown'
+# MAGIC             when 6 then 'Voided trip'
+# MAGIC         end as PaymentTypeDescription
+# MAGIC     , cast(case when fare_amount < 0 then 0.00 else fare_amount end as decimal(8,2)) as FareAmount --Cleanse invalid data
+# MAGIC     , cast(case when extra < 0 then 0.00 else extra end as decimal(8,2)) as ExtraAmount --Cleanse invalid data
+# MAGIC     , cast(case when mta_tax < 0 then 0.00 else mta_tax end as decimal(8,2)) as MTATaxAmount --Cleanse invalid data
+# MAGIC     , cast(case when tip_amount < 0 then 0.00 else tip_amount end as decimal(8,2)) as TipAmount --Cleanse invalid data
+# MAGIC     , cast(case when tolls_amount < 0 then 0.00 else tolls_amount end as decimal(8,2)) as TollsAmount --Cleanse invalid data
+# MAGIC     , cast(case when improvement_surcharge < 0 then 0.00 else improvement_surcharge end as decimal(8,2)) as ImprovementSurchargeAmount --Cleanse invalid data
+# MAGIC     , cast(case when total_amount < 0 then 0.00 else total_amount end as decimal(8,2)) as TotalRideAmount --Cleanse invalid data
+# MAGIC from NYCTaxiDataTable as rides
+# MAGIC   join NYCTaxiLocation as pu
+# MAGIC     on rides.PULocationID = pu.LocationID
+# MAGIC   join NYCTaxiLocation as do
+# MAGIC     on rides.DOLocationID = do.LocationID
+# MAGIC where passenger_count > 0 --Data Cleanup Rules
+# MAGIC   and year(tpep_pickup_datetime) = 2019
+
+# COMMAND ----------
+
+# MAGIC %sql
+# MAGIC 
+# MAGIC --Retrieve curated dataset sample
+# MAGIC 
+# MAGIC select *
+# MAGIC from NYCTaxiData_Curated
+# MAGIC limit 100
+
+# COMMAND ----------
+

@@ -1,19 +1,19 @@
 {
-	"name": "MDWResources_NYCTaxiData_Binary",
+	"name": "SynapseDataLake_NYCImageMetadata_JSON",
 	"properties": {
 		"linkedServiceName": {
-			"referenceName": "MDWResources",
+			"referenceName": "synapsedatalake",
 			"type": "LinkedServiceReference"
 		},
 		"folder": {
-			"name": "Lab2"
+			"name": "Lab4"
 		},
 		"annotations": [],
-		"type": "Binary",
+		"type": "Json",
 		"typeProperties": {
 			"location": {
 				"type": "AzureBlobStorageLocation",
-				"container": "nyctaxidata"
+				"container": "nycimagemetadata"
 			}
 		}
 	}
