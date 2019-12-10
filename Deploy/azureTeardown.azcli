@@ -1,0 +1,7 @@
+#az group create --name "MDW-Lab2"
+
+#az group deployment create --subscription  "AzureTraining" --resource-group "MDW-Synapse"  --template-file "D:\\GitHub\\MDW-Synapse-Lab\\Deploy\\azuredeploy.json"
+
+#az group deployment create --subscription  "AzureTraining" --resource-group "MDW-Synapse"  --template-file "D:\\GitHub\\MDW-Synapse-Lab\\Deploy\\azuredeploy.json"
+
+az group delete --name MDW-Synapse --yes
